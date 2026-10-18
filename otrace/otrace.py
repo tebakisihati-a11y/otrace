@@ -14,21 +14,15 @@ from .config import (
 )
 from .isolation import preflight, postflight, IsolationError, nine_router_health, hosts_file_intact
 from .tools import TOOLS, TOOL_BY_KEY, detect, detect_all, run_tool, installed_keys
-from .reports import build_report, write_all, list_runs
-from .scope import check_scope, scope_add, scope_remove, scope_list
-from .scheduler import add_schedule, remove_schedule, list_schedules, run_now
-from .plugins import list_plugins, install_plugin, register_plugin, create_example_plugin
 
 BANNER = r"""
-   ____  _                     
-  / __ \| |                    
- | |  | | |_ _ __ __ _  ___ ___ 
- | |  | | __| '__/ _` |/ __/ _ \
- | |__| | |_| | | (_| | (_|  __/
-  \____/ \__|_|  \__, |\___\___|
-                  __/ |        
-                 |___/         
-  Powerful Cybersecurity Suite — 9router-safe
+    ____  _                     
+   / __ \| |                    
+  | |  | | |_ _ __ __ _  ___ ___ 
+  | |  | | __| '__/ _` |/ __/ _ \
+  | |__| | |_| | | (_| | (_|  __/
+   \____/ \__|_|  \__,_|\___\___|
+   Powerful Cybersecurity Suite — 9router-safe
 """
 
 
@@ -36,12 +30,26 @@ def new_run_id() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
+def check_scope(target: str) -> bool:
+    cfg = load_config()
+    if cfg.get("OTRACE_SCOPE_REQUIRED", "1") != "1":
+        return True
+    if not SCOPE_FILE.exists():
+        return False
+    allowed = [l.strip() for l in SCOPE_FILE.read_text().splitlines()
+               if l.strip() and not l.strip().startswith("#")]
+    if "*" in allowed or "any" in allowed or "ANY" in allowed:
+        return True
+    for a in allowed:
+        if a == target or target.startswith(a) or a in target:
+            return True
+    return False
+
+
 def protected_target_check(target: str):
     low = target.lower()
     if "9router" in low or "20128" in low:
         raise IsolationError("Target terkait 9router — Otrace menolak (isolasi).")
-    if low in ("127.0.0.1", "localhost") and False:
-        pass
     for h in ["cloudcode-pa.googleapis.com", "runtime.us-east-1.kiro.dev"]:
         if h in low:
             raise IsolationError(f"Target adalah domain 9router ({h}) — ditolak.")
@@ -63,40 +71,10 @@ def cmd_doctor(_args):
         p = detect(t["key"])
         print(f"  {t['key']:<12} {t['cat']:<10} {'OK ' + p if p else 'MISSING'}")
     print()
-    installed = sum(1 for t in TOOLS if detect(t["key"]))
-    print(f"Terpasang: {installed}/{len(TOOLS)}")
-    print(f"Scope file   : {SCOPE_FILE}")
-    
-    # Show plugins
-    try:
-        from .plugins import list_plugins as _list_plugins
-        plugins = _list_plugins()
-        if plugins:
-            print(f"\n=== PLUGINS ({len(plugins)}) ===")
-            for pl in plugins:
-                print(f"  {pl['name']}: {'ok' if 'config' in pl else 'error'}")
-    except Exception:
-        pass
-    
+    print("Terpasang:", sum(1 for t in TOOLS if detect(t["key"])), "/", len(TOOLS))
+    print("Scope file   :", SCOPE_FILE)
     ok, problems, after = postflight(before)
-    print(f"\nIsolasi      : {'AMAN' if ok else 'PERINGATAN ' + '; '.join(problems)}")
-    
-    # Show recent runs
-    try:
-        runs = list_runs(RUNS_DIR)
-        if runs:
-            print(f"\n=== RECENT RUNS ({len(runs)}) ===")
-            for r in runs[:5]:
-                rid = r.get('run_id', 'unknown')
-                target = r.get('target', '-')
-                tools = r.get('tool_count', 0)
-                failed = r.get('failed_count', 0)
-                iso = r.get('isolation_ok', False)
-                iso_icon = '✓' if iso else '✗'
-                print(f"  {rid}  target={target}  tools={tools}  fail={failed}  iso={iso_icon}")
-    except Exception:
-        pass
-    
+    print("Isolasi      :", "AMAN" if ok else "PERINGATAN " + "; ".join(problems))
     return 0
 
 
@@ -110,13 +88,13 @@ def cmd_tools(_args):
     return 0
 
 
-def _run_one(tool_key, target, run_dir, extra=None, msf_cmd=None, stream=False):
+def _run_one(tool_key, target, run_dir, extra=None, msf_cmd=None):
     args = {"target": target}
     if extra:
         args["extra"] = extra
     if msf_cmd:
         args["msf_cmd"] = msf_cmd
-    return run_tool(tool_key, args, run_dir, stream_output=stream)
+    return run_tool(tool_key, args, run_dir)
 
 
 def cmd_scan(args):
@@ -132,36 +110,51 @@ def cmd_scan(args):
     print(f"[otrace] run {run_id} target={target}")
     results = []
 
-    # pipeline order
     pipeline = ["nmap", "nikto", "sqlmap"]
     if args.no_web:
         pipeline = ["nmap"]
     for key in pipeline:
         print(f"  -> {key} ...")
-        r = _run_one(key, target, run_dir, extra=args.extra.split() if args.extra else None, stream=True)
+        r = _run_one(key, target, run_dir, extra=args.extra.split() if args.extra else None)
         results.append(r)
         print(f"     {r.get('status', r.get('error'))}")
 
-    # optional brute force
     if args.brute and detect("hydra"):
         print("  -> hydra ...")
-        r = _run_one("hydra", target, run_dir, extra=args.brute.split(), stream=True)
+        r = _run_one("hydra", target, run_dir, extra=args.brute.split())
         results.append(r)
 
-    report = build_report(run_id, target, results, before, None)
-    # postflight
+    report = {
+        "run_id": run_id,
+        "target": target,
+        "started": datetime.now().isoformat(),
+        "results": results,
+        "nine_router_before": before,
+    }
     ok, problems, after = postflight(before)
     report["nine_router_after"] = after
     report["isolation_ok"] = ok
     report["isolation_problems"] = problems
-    
-    # Write all formats
-    paths = write_all(report, run_dir)
-    print(f"\nReport generated:")
-    for fmt, p in paths.items():
-        print(f"  [{fmt.upper()}] {p}")
-    
-    print(f"\nIsolasi 9router: {'AMAN' if ok else 'PERINGATAN'}")
+    (run_dir / "report.json").write_text(json.dumps(report, indent=2, default=str))
+
+    md = [f"# Otrace Report — {run_id}", "", f"Target: `{target}`", ""]
+    for r in results:
+        md.append(f"## {r.get('tool')}")
+        md.append(f"- status: {r.get('status', r.get('error'))}")
+        if "cmd" in r:
+            md.append(f"- cmd: `{' '.join(r['cmd'])}`")
+        if "stdout" in r:
+            md.append(f"- output: {r['stdout']}")
+        md.append("")
+    md.append("## Isolasi 9router")
+    md.append(f"- sebelum: {before['health']}")
+    md.append(f"- sesudah: {after['health']}")
+    md.append(f"- hosts intact: {after['hosts_intact']}")
+    md.append(f"- hasil: {'AMAN' if ok else 'PERINGATAN: ' + '; '.join(problems)}")
+    (run_dir / "report.md").write_text("\n".join(md))
+
+    print(f"\nReport: {run_dir / 'report.md'}")
+    print("Isolasi 9router:", "AMAN" if ok else "PERINGATAN")
     if not ok:
         print("  " + "; ".join(problems))
     return 0 if ok else 1
@@ -172,23 +165,15 @@ def cmd_recon(args):
     target = args.target
     protected_target_check(target)
     if not check_scope(target):
-        print("Target tidak dalam scope.")
-        return 2
+        print("Target tidak dalam scope."); return 2
     run_dir = RUNS_DIR / new_run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[otrace recon] {target}")
-    r = _run_one("nmap", target, run_dir, extra=(args.extra.split() if args.extra else None), stream=True)
+    r = _run_one("nmap", target, run_dir, extra=(args.extra.split() if args.extra else None))
     print(r.get("status", r.get("error")))
     if "stdout" in r:
         print("output:", r["stdout"])
-    
-    # Generate report
-    report = build_report(new_run_id(), target, [r], before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -198,24 +183,15 @@ def cmd_web(args):
     target = args.target
     protected_target_check(target)
     if not check_scope(target):
-        print("Target tidak dalam scope.")
-        return 2
+        print("Target tidak dalam scope."); return 2
     run_dir = RUNS_DIR / new_run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[otrace web] {target}")
-    results = []
     for key in ["nikto", "sqlmap"]:
         print(f"  -> {key} ...")
-        r = _run_one(key, target, run_dir, stream=True)
-        results.append(r)
+        r = _run_one(key, target, run_dir)
         print(f"     {r.get('status', r.get('error'))}")
-    
-    report = build_report(new_run_id(), target, results, before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -229,13 +205,7 @@ def cmd_crack(args):
     print(r.get("status", r.get("error")))
     if "stdout" in r:
         print("output:", r["stdout"])
-    
-    report = build_report(new_run_id(), args.file, [r], before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -245,22 +215,14 @@ def cmd_reverse(args):
     run_dir = RUNS_DIR / new_run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[otrace reverse] {args.file}")
-    results = []
     for key in ["ghidra", "jadx"]:
         if detect(key):
             print(f"  -> {key} ...")
             r = _run_one(key, args.file, run_dir)
-            results.append(r)
             print(f"     {r.get('status', r.get('error'))}")
         else:
             print(f"  -> {key}: MISSING ({TOOL_BY_KEY[key]['install']})")
-    
-    report = build_report(new_run_id(), args.file, results, before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -270,25 +232,15 @@ def cmd_forensics(args):
     run_dir = RUNS_DIR / new_run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[otrace forensics] {args.image}")
-    results = []
     if detect("autopsy"):
         r = _run_one("autopsy", args.image, run_dir)
-        results.append(r)
         print(r.get("status", r.get("error")))
     else:
         print("autopsy MISSING:", TOOL_BY_KEY["autopsy"]["install"])
-    # wireshark/tshark for pcap
     if args.pcap and detect("wireshark"):
         r = _run_one("wireshark", args.pcap, run_dir)
-        results.append(r)
         print("wireshark:", r.get("status", r.get("error")))
-    
-    report = build_report(new_run_id(), args.image, results, before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -303,13 +255,7 @@ def cmd_wireless(args):
     else:
         r = _run_one("aircrack", args.capture, run_dir, extra=(args.extra.split() if args.extra else None))
         print(r.get("status", r.get("error")))
-    
-    report = build_report(new_run_id(), args.capture, [r] if detect("aircrack") else [], before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -327,13 +273,7 @@ def cmd_exploit(args):
     print(r.get("status", r.get("error")))
     if "stdout" in r:
         print("output:", r["stdout"])
-    
-    report = build_report(new_run_id(), "127.0.0.1", [r], before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -343,26 +283,17 @@ def cmd_vuln(args):
     target = args.target
     protected_target_check(target)
     if not check_scope(target):
-        print("Target tidak dalam scope.")
-        return 2
+        print("Target tidak dalam scope."); return 2
     run_dir = RUNS_DIR / new_run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[otrace vuln] {target} (openvas/gvm)")
-    results = []
     if detect("openvas") or detect("gvm"):
         key = "openvas" if detect("openvas") else "gvm"
         r = _run_one(key, target, run_dir)
-        results.append(r)
         print(r.get("status", r.get("error")))
     else:
         print("openvas/gvm MISSING:", TOOL_BY_KEY["openvas"]["install"])
-    
-    report = build_report(new_run_id(), target, results, before, None)
     ok, problems, after = postflight(before)
-    report["nine_router_after"] = after
-    report["isolation_ok"] = ok
-    write_all(report, run_dir)
-    
     print("Isolasi:", "AMAN" if ok else problems)
     return 0
 
@@ -370,13 +301,6 @@ def cmd_vuln(args):
 def cmd_report(args):
     run_dir = RUNS_DIR / args.run_id
     if not run_dir.exists():
-        # Try listing all runs
-        runs = list_runs(RUNS_DIR)
-        if runs:
-            print("Run tidak ditemukan. Daftar run tersedia:")
-            for r in runs[:10]:
-                print(f"  {r.get('run_id', 'unknown')}  target={r.get('target', '-')}")
-            return 1
         print("Run tidak ditemukan:", run_dir)
         return 1
     p = run_dir / "report.md"
@@ -392,23 +316,13 @@ def cmd_report(args):
 def cmd_scope(args):
     ensure_dirs()
     if args.add:
-        if scope_add(args.add):
-            print(f"Ditambahkan ke scope: {args.add}")
-        else:
-            print(f"Scope sudah ada: {args.add}")
-    elif args.remove:
-        if scope_remove(args.remove):
-            print(f"Dihapus dari scope: {args.remove}")
-        else:
-            print(f"Tidak ditemukan di scope: {args.remove}")
+        lines = SCOPE_FILE.read_text().splitlines() if SCOPE_FILE.exists() else []
+        if args.add not in lines:
+            lines.append(args.add)
+        SCOPE_FILE.write_text("\n".join(lines) + "\n")
+        print("Ditambahkan ke scope:", args.add)
     else:
-        entries = scope_list()
-        if entries:
-            print("Scope saat ini:")
-            for e in entries:
-                print(f"  {e}")
-        else:
-            print("(kosong)")
+        print(SCOPE_FILE.read_text())
     return 0
 
 
@@ -420,86 +334,12 @@ def cmd_isolate(args):
     return 0 if ok else 1
 
 
-def cmd_runs(_args):
-    """List all previous runs with summary."""
-    runs = list_runs(RUNS_DIR)
-    if not runs:
-        print("Belum ada run.")
-        return 0
-    print(f"Total {len(runs)} run:\n")
-    for r in runs:
-        rid = r.get('run_id', 'unknown')
-        target = r.get('target', '-')
-        started = r.get('started', '-')[:19]
-        tools = r.get('tool_count', 0)
-        failed = r.get('failed_count', 0)
-        iso = r.get('isolation_ok', False)
-        iso_icon = '✓' if iso else '✗'
-        print(f"  {rid}")
-        print(f"    target : {target}")
-        print(f"    waktu  : {started}")
-        print(f"    tools  : {tools} dijalankan, {failed} gagal")
-        print(f"    isolasi: {iso_icon}")
-        print()
-    return 0
-
-
-def cmd_schedule(args):
-    """Manage scheduled scans."""
-    if args.action == "add":
-        entry = add_schedule(args.name, args.target, args.cmd, args.cron)
-        print(f"Scheduled added: {entry['name']} -> {args.target} ({args.cmd})")
-    elif args.action == "list":
-        schedules = list_schedules()
-        if not schedules:
-            print("No schedules.")
-        else:
-            for s in schedules:
-                status = "enabled" if s.get("enabled") else "disabled"
-                print(f"  {s['name']}: {s['cmd']} {s['target']} [{status}]")
-    elif args.action == "remove":
-        if remove_schedule(args.name):
-            print(f"Removed schedule: {args.name}")
-        else:
-            print(f"Not found: {args.name}")
-    elif args.action == "run":
-        run_now(args.name, args.target, args.cmd)
-    return 0
-
-
-def cmd_plugin(args):
-    """Manage plugins."""
-    if args.action == "list":
-        plugins = list_plugins()
-        if not plugins:
-            print("No plugins installed.")
-        else:
-            for p in plugins:
-                print(f"  {p['name']}: {'ok' if 'config' in p else 'error'}")
-    elif args.action == "install":
-        result = install_plugin(args.path)
-        if result.get("ok"):
-            print(f"Plugin installed: {result['name']}")
-        else:
-            print(f"Failed: {result.get('error')}")
-    elif args.action == "example":
-        path = create_example_plugin()
-        print(f"Example plugin created: {path}")
-        print("Edit it, then run: otrace plugin install <path>")
-    elif args.action == "reload":
-        from .plugins import reload_plugins
-        reload_plugins()
-        print("Plugins reloaded.")
-    return 0
-
-
 def build_parser():
     p = argparse.ArgumentParser(prog="otrace", description="Otrace powerful cybersecurity suite (9router-safe)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("doctor", help="Cek environment & isolasi").set_defaults(func=cmd_doctor)
     sub.add_parser("tools", help="Daftar tools terintegrasi").set_defaults(func=cmd_tools)
-    sub.add_parser("runs", help="Daftar semua run sebelumnya").set_defaults(func=cmd_runs)
 
     s = sub.add_parser("scan", help="Scan pipeline (nmap+nikto+sqlmap)")
     s.add_argument("target")
@@ -550,24 +390,10 @@ def build_parser():
 
     sc = sub.add_parser("scope", help="Kelola scope (izin)")
     sc.add_argument("--add", default=None, help="tambah target ke scope")
-    sc.add_argument("--remove", default=None, help="hapus target dari scope")
     sc.set_defaults(func=cmd_scope)
 
     iso = sub.add_parser("isolate", help="Cek isolasi 9router")
     iso.set_defaults(func=cmd_isolate)
-
-    sch = sub.add_parser("schedule", help="Jadwalkan scan otomatis")
-    sch.add_argument("action", choices=["add", "list", "remove", "run"])
-    sch.add_argument("--name", default=None)
-    sch.add_argument("--target", default=None)
-    sch.add_argument("--cmd", default="scan")
-    sch.add_argument("--cron", default="0 2 * * *")
-    sch.set_defaults(func=cmd_schedule)
-
-    pl = sub.add_parser("plugin", help="Kelola plugin kustom")
-    pl.add_argument("action", choices=["list", "install", "example", "reload"])
-    pl.add_argument("--path", default=None)
-    pl.set_defaults(func=cmd_plugin)
 
     return p
 
