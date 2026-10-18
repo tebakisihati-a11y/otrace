@@ -13,6 +13,7 @@ from .config import (
     is_protected_port, OTRACE_SERVICE_PORT,
 )
 from .isolation import preflight, postflight, IsolationError, nine_router_health, hosts_file_intact
+from .notify import notify, success, error, warn
 from .tools import TOOLS, TOOL_BY_KEY, detect, detect_all, run_tool, installed_keys
 
 BANNER = r"""
@@ -107,6 +108,7 @@ def cmd_scan(args):
     run_id = new_run_id()
     run_dir = RUNS_DIR / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    notify("Scan Started", f"{run_id} target={target}")
     print(f"[otrace] run {run_id} target={target}")
     results = []
 
@@ -153,10 +155,14 @@ def cmd_scan(args):
     md.append(f"- hasil: {'AMAN' if ok else 'PERINGATAN: ' + '; '.join(problems)}")
     (run_dir / "report.md").write_text("\n".join(md))
 
+    notify("Scan Complete", f"{run_id} isolation={'SAFE' if ok else 'WARNING'}")
     print(f"\nReport: {run_dir / 'report.md'}")
     print("Isolasi 9router:", "AMAN" if ok else "PERINGATAN")
     if not ok:
         print("  " + "; ".join(problems))
+        error(f"Isolation warning: {problems}")
+    else:
+        success(f"Scan {run_id} complete — isolation safe")
     return 0 if ok else 1
 
 
@@ -392,10 +398,22 @@ def build_parser():
     sc.add_argument("--add", default=None, help="tambah target ke scope")
     sc.set_defaults(func=cmd_scope)
 
+    iso = sub.add_parser("serve", help="Start web dashboard")
+    iso.add_argument("--port", type=int, default=8765, help="Port (default 8765)")
+    iso.set_defaults(func=cmd_serve)
+
     iso = sub.add_parser("isolate", help="Cek isolasi 9router")
     iso.set_defaults(func=cmd_isolate)
 
     return p
+
+
+def cmd_serve(args):
+    from .web import serve
+    port = args.port or 8765
+    print(f"Starting Otrace web dashboard on http://127.0.0.1:{port}")
+    print("Press Ctrl+C to stop")
+    serve(port)
 
 
 def main(argv=None):

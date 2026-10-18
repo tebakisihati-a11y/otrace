@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.otrace.web</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd "/Volumes/MORVEXA-CLOUD/SHARED-DATA/iCloud-Drive/Free cloud Host/otrace" && python3 -m otrace serve --port 8765 &gt;&gt; ~/Library/Logs/otrace-web.log 2&gt;&amp;1</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/user/Library/Logs/otrace-web.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/user/Library/Logs/otrace-web-error.log</string>
+</dict>
+</plist>
