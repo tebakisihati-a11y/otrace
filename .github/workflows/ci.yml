@@ -1,0 +1,53 @@
+name: Otrace CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+
+    - name: Lint with flake8
+      run: |
+        flake8 otrace --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 otrace --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+    - name: Test with pytest
+      run: |
+        pytest otrace/tests/ -v --tb=short
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check for hardcoded secrets
+      run: |
+        echo "Checking for hardcoded secrets..."
+        grep -r "password\|secret\|api_key\|token" --include="*.py" --exclude-dir=.git || echo "No secrets found"
+
+    - name: Verify isolation guards
+      run: |
+        echo "Verifying isolation.py contains safety checks..."
+        grep -q "IsolationError" otrace/isolation.py && echo "IsolationError present"
+        grep -q "assert_safe_command" otrace/isolation.py && echo "Command safety check present"
+        grep -q "assert_safe_port" otrace/isolation.py && echo "Port safety check present"

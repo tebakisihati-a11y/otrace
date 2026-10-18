@@ -125,6 +125,8 @@ TOOLS = [
     },
 ]
 
+# ponytail: add tqdm progress bars when `pip3 install tqdm` available. Check import at runtime.
+
 TOOL_BY_KEY = {t["key"]: t for t in TOOLS}
 
 
@@ -150,13 +152,13 @@ def installed_keys() -> list:
     return [k for k, v in detect_all().items() if v]
 
 
-def run_tool(name: str, args: dict, run_dir: Path, timeout: int = None) -> dict:
+def run_tool(name: str, args: dict, run_dir: Path, timeout: int = None, stream_output: bool = False) -> dict:
+    """Run a tool with optional stdout streaming to console."""
     t = TOOL_BY_KEY.get(name)
     if not t:
         return {"ok": False, "error": f"tool tidak dikenal: {name}"}
     binary = detect(name)
     if not binary:
-        # build planned command using first binary name for reference
         try:
             planned = t["builder"](args)
         except Exception as e:
@@ -197,12 +199,29 @@ def run_tool(name: str, args: dict, run_dir: Path, timeout: int = None) -> dict:
 
     start = time.time()
     try:
-        with open(stdout_path, "w") as fo, open(stderr_path, "w") as fe:
-            proc = subprocess.run(
-                cmd, stdout=fo, stderr=fe, timeout=to, text=True,
-                env={**dict(__import__("os").environ), "OTRACE_RUN": str(run_dir)},
-            )
-        rc = proc.returncode
+        if stream_output:
+            with open(stdout_path, "w") as fo, open(stderr_path, "w") as fe:
+                proc = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=to,
+                    text=True,
+                    env={**dict(__import__("os").environ), "OTRACE_RUN": str(run_dir)},
+                )
+                for line in proc.stdout.splitlines():
+                    print(f"  [{name}] {line}")
+                    fo.write(line + "\n")
+                for line in proc.stderr.splitlines():
+                    fe.write(line + "\n")
+                rc = proc.returncode
+        else:
+            with open(stdout_path, "w") as fo, open(stderr_path, "w") as fe:
+                proc = subprocess.run(
+                    cmd, stdout=fo, stderr=fe, timeout=to, text=True,
+                    env={**dict(__import__("os").environ), "OTRACE_RUN": str(run_dir)},
+                )
+            rc = proc.returncode
     except subprocess.TimeoutExpired:
         rc = -1
         with open(stderr_path, "a") as fe:

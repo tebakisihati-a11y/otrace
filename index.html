@@ -4,37 +4,312 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Otrace — powerful cybersecurity suite, 9router-safe.">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <title>Otrace · Powerful Cybersecurity Suite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --paper:#ffffff; --ink:#000000; --accent:#ff00bc; --gap:20px; --gap-lg:48px; --max:1200px; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,system-ui,sans-serif; color:var(--ink); background:var(--paper); line-height:1.5; }
-    .wrap { max-width:var(--max); margin:0 auto; padding:var(--gap-lg) var(--gap); }
-    header { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); margin-bottom:var(--gap-lg); }
-    .wordmark { display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink); font-weight:700; }
-    .mark { width:32px; height:32px; }
-    nav a { color:var(--ink); text-decoration:none; margin-left:var(--gap); font-weight:600; }
-    nav a:hover { color:var(--accent); }
-    h1 { font-size:clamp(2rem,5vw,3.5rem); margin:0 0 var(--gap); letter-spacing:-0.02em; }
-    .lead { font-size:1.15rem; max-width:720px; margin:0 0 var(--gap-lg); }
-    .accent { color:var(--accent); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:var(--gap); }
-    .card { border:1px solid var(--ink); padding:var(--gap); border-radius:0; }
-    .card h3 { margin:0 0 8px; font-size:1rem; text-transform:uppercase; letter-spacing:.08em; }
-    .card .status { font-weight:700; }
-    .ok { color:#0a7a2f; }
-    .miss { color:#b00020; }
-    .section { margin-top:var(--gap-lg); }
-    .section h2 { font-size:1.4rem; margin:0 0 var(--gap); border-bottom:1px solid var(--ink); padding-bottom:8px; }
-    pre { background:#f4f4f4; padding:var(--gap); overflow:auto; border:1px solid var(--ink); border-radius:0; font-size:.85rem; }
-    .badge { display:inline-block; background:var(--accent); color:#fff; padding:2px 8px; font-size:.75rem; font-weight:700; margin-left:8px; }
-    footer { margin-top:var(--gap-lg); padding-top:var(--gap); border-top:1px solid var(--ink); font-size:.85rem; }
-    footer a { color:var(--accent); }
-    ul { padding-left:1.2rem; }
+    :root {
+      --paper: #fafafa;
+      --ink: #0a0a0a;
+      --accent: #ff00bc;
+      --accent2: #00d4ff;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #059669;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --gap: 20px;
+      --gap-lg: 48px;
+      --max: 1200px;
+      --radius: 8px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0a0a0a;
+        --ink: #fafafa;
+        --muted: #9ca3af;
+        --border: #27272a;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.6;
+    }
+    code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: var(--gap-lg) var(--gap); }
+    
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--gap);
+      margin-bottom: var(--gap-lg);
+      padding-bottom: var(--gap);
+      border-bottom: 2px solid var(--ink);
+    }
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .mark { width: 36px; height: 36px; }
+    nav { display: flex; gap: var(--gap); }
+    nav a {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+    nav a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    /* Hero */
+    .hero {
+      padding: var(--gap-lg) 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--gap-lg);
+    }
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      margin: 0 0 var(--gap);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .lead {
+      font-size: 1.25rem;
+      max-width: 680px;
+      margin: 0 0 var(--gap);
+      color: var(--muted);
+    }
+    .accent { color: var(--accent); }
+    .accent2 { color: var(--accent2); }
+    
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--ink);
+      color: var(--paper);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: 2px solid var(--ink);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: transparent;
+      color: var(--ink);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--ink);
+    }
+    .btn-outline:hover {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .btn-accent {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .btn-accent:hover {
+      background: transparent;
+      color: var(--accent);
+    }
+    
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--gap);
+    }
+    
+    /* Cards */
+    .card {
+      border: 2px solid var(--border);
+      padding: var(--gap);
+      border-radius: var(--radius);
+      transition: all 0.2s;
+      background: var(--paper);
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .card .desc {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 8px;
+    }
+    
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-ok { background: #d1fae5; color: var(--success); }
+    .badge-miss { background: #fee2e2; color: var(--danger); }
+    .badge-accent { background: var(--accent); color: white; }
+    .badge-blue { background: var(--accent2); color: white; }
+    
+    @media (prefers-color-scheme: dark) {
+      .badge-ok { background: #064e3b; color: #6ee7b7; }
+      .badge-miss { background: #7f1d1d; color: #fca5a5; }
+    }
+    
+    /* Sections */
+    .section { margin-top: var(--gap-lg); }
+    .section h2 {
+      font-size: 1.5rem;
+      margin: 0 0 var(--gap);
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--ink);
+    }
+    
+    /* Code blocks */
+    pre {
+      background: #18181b;
+      color: #e4e4e7;
+      padding: var(--gap);
+      overflow-x: auto;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      line-height: 1.7;
+    }
+    pre .prompt { color: var(--accent2); }
+    pre .comment { color: #71717a; }
+    
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--gap) 0;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    tr:hover td { background: var(--paper); }
+    
+    /* Feature list */
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+    
+    /* Footer */
+    footer {
+      margin-top: var(--gap-lg);
+      padding-top: var(--gap);
+      border-top: 2px solid var(--ink);
+      font-size: 0.875rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--gap);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: var(--gap-lg) 0;
+    }
+    
+    /* Alert boxes */
+    .alert {
+      padding: var(--gap);
+      border-radius: var(--radius);
+      margin: var(--gap) 0;
+    }
+    .alert-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+    }
+    .alert-warn {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+    .alert-success {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+    }
+    @media (prefers-color-scheme: dark) {
+      .alert-info { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+      .alert-warn { background: #451a03; border-color: #f59e0b; color: #fcd34d; }
+      .alert-success { background: #064e3b; border-color: #10b981; color: #6ee7b7; }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; }
+      nav { flex-wrap: wrap; }
+      h1 { font-size: 2rem; }
+    }
   </style>
 </head>
 <body>
@@ -46,74 +321,207 @@
           <rect x="17" y="1" width="14" height="14" fill="none" stroke="#ff00bc" stroke-width="2"/>
           <rect x="1" y="17" width="30" height="14" fill="none" stroke="#ff00bc" stroke-width="2"/>
         </svg>
-        <span class="name"><b>Otrace</b>&nbsp;Cybersecurity Suite</span>
+        <span><b>Otrace</b> Suite</span>
       </a>
       <nav>
+        <a href="#features">Features</a>
         <a href="#tools">Tools</a>
-        <a href="#isolation">Isolasi</a>
-        <a href="#usage">Penggunaan</a>
-        <a href="https://github.com/tebakisihati-a11y/otrace">Kode</a>
+        <a href="#usage">Usage</a>
+        <a href="https://github.com/tebakisihati-a11y/otrace">GitHub</a>
       </nav>
     </header>
 
     <main>
-      <h1>Otrace <span class="accent">—</span> Powerful Cybersecurity Suite</h1>
-      <p class="lead">Satu CLI yang menggabungkan 14 tools keamanan siber populer (Nmap, SQLmap, Metasploit, Ghidra, …) dalam satu alur kerja konsisten, dengan jaminan <b>tidak mengganggu 9router</b> yang berjalan di laptop.</p>
-
-      <section id="tools" class="section">
-        <h2>Tools terintegrasi <span class="badge">14</span></h2>
-        <div class="grid">
-          <div class="card"><h3>Recon</h3><div>Nmap</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Web</h3><div>SQLmap, Nikto</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Akses</h3><div>OpenSSH</div><div class="status ok">OK — terpasang</div></div>
-          <div class="card"><h3>Vulnerability</h3><div>OpenVAS, GVM</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Password</h3><div>John the Ripper, Hydra</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Exploit</h3><div>Metasploit</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Wireless</h3><div>Aircrack-ng</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Network</h3><div>Wireshark (tshark)</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Forensics</h3><div>Autopsy</div><div class="status miss">MISSING (opsional)</div></div>
-          <div class="card"><h3>Reverse</h3><div>Ghidra, JADX</div><div class="status miss">MISSING (opsional)</div></div>
+      <section class="hero">
+        <h1>Cybersecurity <span class="accent">Suite</span><br>9router <span class="accent2">Safe</span></h1>
+        <p class="lead">Satu CLI yang menggabungkan 14+ tools keamanan siber populer ke dalam satu alur kerja konsisten. Dilengkapi report generator, CIDR scope, plugin system, dan scheduled scans — semuanya gratis.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <a href="#usage" class="btn btn-accent">Mulai Pakai</a>
+          <a href="https://github.com/tebakisihati-a11y/otrace" class="btn btn-outline">Lihat Kode</a>
         </div>
-        <p style="margin-top:var(--gap)">Hanya <b>ssh</b> yang terdeteksi di mesin ini; tool lain opsional. Otrace tetap jalan dan menandai <code>not_installed</code> + petunjuk pasang. Pasang via <code>brew install …</code> / <code>apt install …</code> / <code>pip3 install sqlmap</code>.</p>
       </section>
 
-      <section id="isolation" class="section">
-        <h2>Isolasi 9router <span class="badge">AMAN</span></h2>
-        <ul>
-          <li>Pre-flight &amp; post-flight tiap perintah: cek <code>:20128/api/health</code> &amp; <code>:_mitm_health</code> + entri <code>/etc/hosts</code>.</li>
-          <li>Port terlindung (443, 20128) + band 3000–8888 tidak pernah di-bind/di-scan.</li>
-          <li><code>/etc/hosts</code> tidak pernah ditulis oleh Otrace.</li>
-          <li>Tidak ada <code>pkill</code> pola luas; hanya proses yang diluncurkan Otrace.</li>
-          <li>Target 9router ditolak otomatis.</li>
-          <li>State terpisah di <code>~/.otrace</code> (bukan <code>~/.9router</code>).</li>
-        </ul>
+      <section id="features" class="section">
+        <h2>Features</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>14+ Tools</h3>
+            <div class="value">14</div>
+            <div class="desc">Nmap, SQLmap, Nikto, John, Hydra, Metasploit, Ghidra, dan lainnya terintegrasi.</div>
+          </div>
+          <div class="card">
+            <h3>Report Generator</h3>
+            <div class="value">4</div>
+            <div class="desc">Format JSON, Markdown, SARIF (GitHub), dan CSV untuk setiap scan.</div>
+          </div>
+          <div class="card">
+            <h3>CIDR Scope</h3>
+            <div class="value">✓</div>
+            <div class="desc">Scope checking support CIDR notation (192.168.1.0/24) via stdlib ipaddress.</div>
+          </div>
+          <div class="card">
+            <h3>Plugin System</h3>
+            <div class="value">∞</div>
+            <div class="desc">Tambah tool kustom dengan plugin JSON. Ekstensible tanpa modifikasi core.</div>
+          </div>
+          <div class="card">
+            <h3>Scheduled Scans</h3>
+            <div class="value">⏰</div>
+            <div class="desc">Jadwalkan scan otomatis dengan cron expression. Monitor tanpa intervensi.</div>
+          </div>
+          <div class="card">
+            <h3>9router Safe</h3>
+            <div class="value">🛡️</div>
+            <div class="desc">Pre-flight & post-flight isolation guard. Port & hosts terproteksi.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tools" class="section">
+        <h2>Tools Terintegrasi</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Kategori</th>
+              <th>Deskripsi</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>nmap</code></td><td>Recon</td><td>Port/service scanning</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>sqlmap</code></td><td>Web</td><td>SQL injection testing</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>nikto</code></td><td>Web</td><td>Web server scanner</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>ssh</code></td><td>Access</td><td>Remote access</td><td><span class="badge badge-ok">Pre-installed</span></td></tr>
+            <tr><td><code>john</code></td><td>Password</td><td>Password cracking</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>hydra</code></td><td>Password</td><td>Brute force login</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>metasploit</code></td><td>Exploit</td><td>Exploit framework</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>openvas/gvm</code></td><td>Vuln</td><td>Vulnerability scanning</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>aircrack-ng</code></td><td>Wireless</td><td>WiFi security testing</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>tshark</code></td><td>Network</td><td>Packet analysis</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>autopsy</code></td><td>Forensics</td><td>Digital forensics</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>ghidra</code></td><td>Reverse</td><td>Reverse engineering</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+            <tr><td><code>jadx</code></td><td>Reverse</td><td>Android decompiler</td><td><span class="badge badge-miss">Opsional</span></td></tr>
+          </tbody>
+        </table>
+        <div class="alert alert-info">
+          <strong>Note:</strong> Hanya SSH yang terdeteksi pre-installed. Tool lain opsional — Otrace tetap berjalan dan menandai <code>not_installed</code> dengan petunjuk instalasi.
+        </div>
       </section>
 
       <section id="usage" class="section">
         <h2>Penggunaan</h2>
-        <pre>./bin/otrace doctor
-./bin/otrace scope --add 192.168.1.0/24
-./bin/otrace scan 192.168.1.10        # nmap + nikto + sqlmap
-./bin/otrace recon 192.168.1.10       # nmap
-./bin/otrace web http://target        # nikto + sqlmap
-./bin/otrace crack hashes.txt         # john
-./bin/otrace reverse app.apk          # ghidra + jadx
-./bin/otrace forensics disk.img       # autopsy
-./bin/otrace wireless capture.cap     # aircrack-ng
-./bin/otrace exploit --cmd "version; exit"  # metasploit
-./bin/otrace vuln 192.168.1.10        # openvas/gvm
-./bin/otrace report &lt;run_id&gt;
-./bin/otrace isolate</pre>
+        <pre><span class="prompt">$</span> ./bin/otrace doctor
+<span class="prompt">$</span> ./bin/otrace tools
+<span class="prompt">$</span> ./bin/otrace scope --add 192.168.1.0/24
+<span class="prompt">$</span> ./bin/otrace scan 192.168.1.10
+<span class="prompt">$</span> ./bin/otrace recon 192.168.1.10
+<span class="prompt">$</span> ./bin/otrace web http://target
+<span class="prompt">$</span> ./bin/otrace crack hashes.txt
+<span class="prompt">$</span> ./bin/otrace reverse app.apk
+<span class="prompt">$</span> ./bin/otrace forensics disk.img
+<span class="prompt">$</span> ./bin/otrace wireless capture.cap
+<span class="prompt">$</span> ./bin/otrace exploit --cmd "version; exit"
+<span class="prompt">$</span> ./bin/otrace vuln 192.168.1.10
+<span class="prompt">$</span> ./bin/otrace report &lt;run_id&gt;
+<span class="prompt">$</span> ./bin/otrace runs
+<span class="prompt">$</span> ./bin/otrace isolate
+
+<span class="comment"># Schedule & Plugins</span>
+<span class="prompt">$</span> ./bin/otrace schedule add --name daily --target 192.168.1.0/24 --cmd scan --cron "0 2 * * *"
+<span class="prompt">$</span> ./bin/otrace schedule list
+<span class="prompt">$</span> ./bin/otrace plugin example
+<span class="prompt">$</span> ./bin/otrace plugin install ./my-plugin.json</pre>
       </section>
 
       <section class="section">
-        <h2>Output</h2>
-        <p>Setiap run tersimpan di <code>~/.otrace/runs/&lt;run_id&gt;/</code>: <code>report.json</code>, <code>report.md</code>, dan <code>&lt;tool&gt;.out/.err</code>.</p>
+        <h2>Output Format</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>JSON</h3>
+            <div class="mono" style="font-size: 0.75rem; margin-top: 12px;">{
+  "run_id": "20261018-120000",
+  "target": "192.168.1.10",
+  "results": [...],
+  "isolation_ok": true
+}</div>
+          </div>
+          <div class="card">
+            <h3>Markdown</h3>
+            <div class="mono" style="font-size: 0.75rem; margin-top: 12px;"># Otrace Report
+Target: 192.168.1.10
+Tools: 3 ran, 0 failed
+Isolation: AMAN</div>
+          </div>
+          <div class="card">
+            <h3>SARIF</h3>
+            <div class="mono" style="font-size: 0.75rem; margin-top: 12px;">{
+  "version": "2.1.0",
+  "runs": [{
+    "tool": {"name": "nmap"},
+    "results": [...]
+  }]
+}</div>
+          </div>
+          <div class="card">
+            <h3>CSV</h3>
+            <div class="mono" style="font-size: 0.75rem; margin-top: 12px;">run_id,target,tool,status,...
+20261018,nmap,done,0,12.5</div>
+          </div>
+        </div>
       </section>
+
+      <section class="section">
+        <h2>Isolasi 9router</h2>
+        <ul class="feature-list">
+          <li>
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div><strong>Port terlindungi:</strong> 443 dan 20128 tidak pernah di-bind/di-scan. Band 3000-8888 dihindari.</div>
+          </li>
+          <li>
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12H3M21 12l-4-4m4 4l-4 4"/></svg>
+            <div><strong>/etc/hosts aman:</strong> Otrace tidak pernah menulis ke file ini. Entri 9router tetap intact.</div>
+          </li>
+          <li>
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div><strong>Pre-flight & post-flight:</strong> Setiap perintah mengecek kesehatan 9router sebelum & sesudah jalan.</div>
+          </li>
+          <li>
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <div><strong>State terpisah:</strong> <code>~/.otrace</code> (bukan <code>~/.9router</code>). Tidak ada file yang ditulis ke direktori 9router.</div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Instalasi</h2>
+        <pre><span class="comment"># Clone repository</span>
+git clone https://github.com/tebakisihati-a11y/otrace.git
+cd otrace
+
+<span class="comment"># Setup</span>
+chmod +x bin/otrace
+./bin/otrace doctor
+
+<span class="comment"># Install optional tools (contoh)</span>
+brew install nmap nikto john aircrack-ng tshark jadx ghidra
+pip3 install sqlmap
+
+<span class="comment"># Opsional: symlink ke PATH</span>
+ln -s "$(pwd)/bin/otrace" /usr/local/bin/otrace</pre>
+      </section>
+
+      <div class="alert alert-warn">
+        <strong>Peringatan Etika:</strong> Gunakan hanya pada sistem yang Anda miliki atau punya izin tertulis. Otrace menolak target 9router dan tidak akan menyentuh layanan lokal yang dilindungi.
+      </div>
     </main>
 
     <footer>
-      <p>Otrace · <a href="https://github.com/tebakisihati-a11y/otrace">Kode sumber</a> · Gunakan hanya pada sistem yang Anda miliki / punya izin tertulis.</p>
+      <div>Otrace v2.0 · Powerful Cybersecurity Suite · 9router-safe</div>
+      <div>
+        <a href="https://github.com/tebakisihati-a11y/otrace">GitHub</a> ·
+        <a href="#usage">Dokumentasi</a>
+      </div>
     </footer>
   </div>
 </body>
