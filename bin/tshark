@@ -1,0 +1,3 @@
+#!/bin/bash
+# tshark wrapper — uses pre-built otrace-wireshark image
+podman run --rm localhost/otrace-wireshark:latest "$@"

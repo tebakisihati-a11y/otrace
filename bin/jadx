@@ -1,0 +1,33 @@
+#!/bin/bash
+# jadx wrapper — runs via Podman eclipse-temurin (Java 17)
+# Usage: jadx <target> [options]
+JADX_HOME="$HOME/jadx"
+WORK_DIR="$HOME/.jadx-work"
+IMAGE="docker.io/library/eclipse-temurin:17-jdk"
+
+if [ ! -d "$JADX_HOME" ]; then
+    echo "jadx tidak terpasang. Unduh dari https://github.com/skylot/jadx/releases" >&2
+    exit 1
+fi
+
+mkdir -p "$WORK_DIR"
+
+# Copy target files to work dir, build args
+ARGS=()
+for arg in "$@"; do
+    if [ -f "$arg" ]; then
+        cp "$arg" "$WORK_DIR/"
+        ARGS+=("$(basename "$arg")")
+    else
+        ARGS+=("$arg")
+    fi
+done
+
+cd "$WORK_DIR" || exit 1
+
+podman run --rm \
+    -v "$JADX_HOME":/opt/jadx:ro \
+    -v "$WORK_DIR":/work \
+    -w /work \
+    "$IMAGE" \
+    /opt/jadx/bin/jadx "${ARGS[@]}"
