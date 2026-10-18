@@ -1,3 +1,3 @@
-from .otrace import main
+from .cli import main
 import sys
 sys.exit(main())

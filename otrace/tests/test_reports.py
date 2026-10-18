@@ -3,7 +3,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from otrace.reports import build_report, write_json, write_markdown, write_sarif, write_csv, list_runs
+from otrace.reports import build_report, write_json, write_markdown, write_sarif, write_csv, write_all, list_runs
 from otrace.config import RUNS_DIR
 import json
 from pathlib import Path
@@ -25,7 +25,7 @@ def test_build_report():
     assert report["target"] == "192.168.1.1"
     assert report["tool_count"] == 2
     assert report["failed_count"] == 1
-    assert report.get("isolation_ok", True) == True
+    assert report.get("isolation_ok", True) == False  # 有失败的工具
 
 
 def test_write_json(tmp_path):
@@ -105,6 +105,10 @@ def test_write_all(tmp_path):
         "target": "192.168.1.1",
         "results": [],
         "isolation_ok": True,
+        "started": "2026-10-18T12:00:00",
+        "finished": "2026-10-18T12:01:00",
+        "tool_count": 0,
+        "failed_count": 0,
     }
     paths = write_all(report, tmp_path)
     

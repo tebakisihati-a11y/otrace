@@ -8,7 +8,6 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import OTRACE_HOME
-from . import otrace as otrace_mod
 
 SCHEDULES_FILE = OTRACE_HOME / "schedules.json"
 
@@ -66,6 +65,7 @@ def list_schedules() -> list:
 
 def run_now(name: str, target: str, cmd: str) -> str:
     """Execute a scheduled command immediately and return run_id."""
+    from . import cli as otrace_mod
     run_id = otrace_mod.new_run_id()
     # Map short cmd names to full otrace commands
     cmd_map = {
