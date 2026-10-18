@@ -1,0 +1,21 @@
+#!/bin/bash
+# metasploit wrapper — runs via Podman parrotsec/metasploit
+# Usage: msfconsole [options] / msfvenom [options]
+IMAGE="docker.io/parrotsec/metasploit:latest"
+
+if [ ! -f "$HOME/.ssh/otrace_deploy_key" ]; then
+    # First run: init DB
+    echo "[metasploit] Initializing database..."
+    podman run --rm \
+        -v "$HOME/.msf4":/root/.msf4 \
+        "$IMAGE" \
+        msfdb init 2>/dev/null || true
+fi
+
+# Run metasploit command
+podman run --rm -it \
+    -v "$HOME/.msf4":/root/.msf4 \
+    -v "$PWD":/work \
+    -w /work \
+    "$IMAGE" \
+    "$@"

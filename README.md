@@ -10,6 +10,8 @@ Orchestrasi tool keamanan siber gratis dengan isolasi, scheduling, dan laporan o
 - **Scheduling**: Cron-based automatic scans
 - **Reports**: JSON, Markdown, SARIF, CSV
 - **Plugin System**: Extensible tool wrappers
+- **NOC Service**: Auto-start via launchd, health monitoring
+- **SSH Access**: Personal token-based remote access
 
 ## Instalasi
 
@@ -34,6 +36,12 @@ pip3 install -e .
 
 # Install ghidra (manual, ~540MB)
 ./bin/install-ghidra.sh
+
+# Install NOC service (auto-start + health check)
+./bin/install-service.sh
+
+# Setup SSH access (personal token)
+./bin/setup-access.sh
 ```
 
 ### Tool Wrappers (Podman)
@@ -51,11 +59,11 @@ Tool dijalankan via Podman container agar isolated dan reproducible:
 | tshark | `~/bin/tshark` | ✅ Working |
 | jadx | `~/bin/jadx` | ✅ Working |
 | ghidra | `~/bin/ghidra` | ✅ Working |
+| metasploit | `~/bin/msfconsole` | ✅ Working |
+| openvas | `~/bin/openvas` | ✅ Working |
+| autopsy | `~/bin/autopsy` | ✅ Working |
 | ssh | `/usr/bin/ssh` | ✅ Native |
-| openvas | Manual install | ⚠️ |
-| metasploit | Manual install | ⚠️ |
-| autopsy | Manual install | ⚠️ |
-| gvm | Manual install | ⚠️ |
+| gvm | `~/bin/openvas` | ✅ Working |
 
 ## Penggunaan
 
@@ -79,12 +87,42 @@ python3 -m otrace tools --list
 
 Buka `index.html` di browser untuk dashboard visual.
 
+### NOC Service
+
+```bash
+# Service management
+launchctl load ~/Library/LaunchAgents/com.otrace.daemon.plist
+launchctl unload ~/Library/LaunchAgents/com.otrace.daemon.plist
+launchctl list | grep otrace
+
+# Health check
+~/bin/health-check
+tail -f ~/Library/Logs/otrace-health.log
+
+# Alerts
+cat ~/.otrace/alerts
+```
+
+### SSH Access
+
+```bash
+# Local
+otrace-local <command>
+
+# Remote
+export OTRACE_HOST=<host>
+export OTRACE_PORT=22
+otrace-ssh <command>
+```
+
 ## Keamanan
 
 - **9router Guard**: Never modify `/etc/hosts`, never touch ports 443/20128
 - **Command Injection Prevention**: `assert_safe_command()` validates all tool commands
 - **Port Protection**: `assert_safe_port()` blocks protected ports
 - **Isolation**: Tool wrappers run in isolated Podman containers
+- **Access Control**: SSH keypair + personal token authentication
+- **Health Monitoring**: Automated NOC checks every 5 minutes
 
 ## Testing
 

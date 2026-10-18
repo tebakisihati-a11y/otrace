@@ -1,0 +1,15 @@
+#!/bin/bash
+# autopsy wrapper — runs via Podman bannsec/autopsy
+# Usage: autopsy [options]
+IMAGE="docker.io/bannsec/autopsy:latest"
+
+# Ensure data volume exists
+mkdir -p "$HOME/.autopsy"
+
+# Run autopsy command
+podman run --rm -it \
+    -v "$HOME/.autopsy":/data \
+    -v "$PWD":/work \
+    -w /work \
+    "$IMAGE" \
+    "$@"

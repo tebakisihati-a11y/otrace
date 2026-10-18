@@ -40,8 +40,8 @@ TOOLS = [
         "bin": ["openvas", "gvm-cli"],
         "cat": "vuln",
         "desc": "OpenVAS vulnerability scanner (via GVM)",
-        "install": "brew install gvm  (atau apt install gvm)",
-        "builder": lambda a: ["gvm-cli", "socket", "--xml", f'<create_target><name>{a["target"]}</name></create_target>'],
+        "install": "Podman: docker.io/mikesplain/openvas (otrace auto-wrap)",
+        "builder": lambda a: ["openvas", "--target", a["target"]] + (a.get("extra", []) or []),
     },
     {
         "key": "john",
@@ -64,7 +64,7 @@ TOOLS = [
         "bin": ["msfconsole", "msfvenom"],
         "cat": "exploit",
         "desc": "Metasploit Framework (exploit dev & payload)",
-        "install": "brew install metasploit  (atau apt install metasploit-framework)",
+        "install": "Podman: docker.io/parrotsec/metasploit (otrace auto-wrap)",
         "builder": lambda a: ["msfconsole", "-q", "-x", a.get("msf_cmd", "version; exit")],
     },
     {
@@ -104,7 +104,7 @@ TOOLS = [
         "bin": ["autopsy"],
         "cat": "forensics",
         "desc": "Digital forensics platform (Autopsy)",
-        "install": "brew install autopsy  (atau apt install autopsy)",
+        "install": "Podman: docker.io/bannsec/autopsy (otrace auto-wrap)",
         "builder": lambda a: ["autopsy", a["target"]] + (a.get("extra", []) or []),
     },
     {

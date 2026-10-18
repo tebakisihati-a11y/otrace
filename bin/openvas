@@ -1,0 +1,14 @@
+#!/bin/bash
+# openvas/gvm wrapper — runs via Podman mikesplain/openvas
+# Usage: openvas [options] / gvm-cli [options]
+IMAGE="docker.io/mikesplain/openvas:latest"
+
+# Ensure data volume exists
+mkdir -p "$HOME/.openvas"
+
+# Run openvas command
+podman run --rm -it \
+    -v "$HOME/.openvas":/data \
+    -p 9392:9392 \
+    "$IMAGE" \
+    "$@"
